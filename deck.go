@@ -1,69 +1,88 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
 )
 
-// Create a new type of 'deck'
-// which is a slice of strings
-type deck []string
+const deckSize = 52
 
-func newDeck() deck {
-	cards := deck{}
+type Deck struct {
+	Cards []*Card
+}
+
+func NewDeck() *Deck {
+	d := Deck{
+		Cards: make([]*Card, 0, deckSize),
+	}
 
 	cardSuits := []string{"Spades", "Diamonds", "Hearts", "Clubs"}
 	cardValues := []string{"Ace", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King"}
 
-	for _, suit := range cardSuits {
-		for _, value := range cardValues {
-			cards = append(cards, value+" of "+suit)
+	for _, s := range cardSuits {
+		for _, v := range cardValues {
+			d.Cards = append(d.Cards, NewCard(v, s))
 		}
 	}
 
-	return cards
+	return &d
 }
 
-func (d deck) print() {
-	for i, card := range d {
-		fmt.Println(i, card)
-	}
-}
-
-func deal(d deck, handSize int) (deck, deck) {
-	return d[:handSize], d[handSize:]
-}
-
-func (d deck) toString() string {
-	return strings.Join(d, "\n")
-}
-
-func (d deck) saveToFile(filename string) error {
-	return ioutil.WriteFile(filename, []byte(d.toString()), 0666)
-}
-
-func newDeckFromFile(filename string) deck {
-	bs, err := ioutil.ReadFile(filename)
+func NewDeckFromFile(n string) (*Deck, error) {
+	bs, err := os.ReadFile(n)
 	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	s := strings.Split(string(bs), "\n")
-	return s
+	d := &Deck{
+		Cards: make([]*Card, 0),
+	}
+
+	cs := strings.Split(string(bs), "\n")
+	for _, s := range cs {
+		c, err := NewCardFromString(s)
+		if err != nil {
+			return nil, err
+		}
+
+		d.Cards = append(d.Cards, c)
+	}
+
+	return d, nil
 }
 
-func (d deck) shuffle() {
+func (d *Deck) Shuffle() {
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)
 
-	for i := range d {
-		np := r.Intn(len(d) - 1)
+	for i := range d.Cards {
+		np := r.Intn(len(d.Cards) - 1)
 
-		d[i], d[np] = d[np], d[i]
+		d.Cards[i], d.Cards[np] = d.Cards[np], d.Cards[i]
 	}
+}
+
+func (d *Deck) MoveCardsFromDeckToHand(h *Hand, cc uint8) {
+	var i uint8
+	for i = 0; i < cc; i++ {
+		h.AddCardToHand(d.Cards[i])
+	}
+
+	d.Cards = d.Cards[cc:]
+}
+
+func (d Deck) toString() string {
+	cs := make([]string, 0, len(d.Cards))
+
+	for _, c := range d.Cards {
+		cs = append(cs, c.toString())
+	}
+
+	return strings.Join(cs, "\n")
+}
+
+func (d Deck) toFile(n string) error {
+	return os.WriteFile(n, []byte(d.toString()), 0666)
 }

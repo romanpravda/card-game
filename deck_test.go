@@ -6,68 +6,115 @@ import (
 )
 
 func TestNewDeck(t *testing.T) {
-	d := newDeck()
+	d := NewDeck()
 
-	if len(d) != 52 {
-		t.Errorf("Excpected deck length of 52, but got %d", len(d))
+	if len(d.Cards) != 52 {
+		t.Errorf("Excpected deck length of 52, but got %d", len(d.Cards))
 	}
 
-	if d[0] != "Ace of Spades" {
-		t.Errorf("Excpected first card of Ace of Spades, but got %s", d[0])
+	fc := d.Cards[0].toString()
+	if fc != "Ace of Spades" {
+		t.Errorf("Excpected first card of Ace of Spades, but got %s", fc)
 	}
 
-	if d[len(d)-1] != "King of Clubs" {
-		t.Errorf("Excpected last card of King of Clubs, but got %s", d[len(d)-1])
+	lc := d.Cards[len(d.Cards)-1].toString()
+	if lc != "King of Clubs" {
+		t.Errorf("Excpected last card of King of Clubs, but got %s", lc)
 	}
 }
 
 func TestSaveToDeckAndNewDeckFromFile(t *testing.T) {
 	filename := "_decktesting"
-	os.Remove(filename)
+	err := os.Remove(filename)
+	if err != nil && !os.IsNotExist(err) {
+		t.Error(err)
 
-	d := newDeck()
-	d.saveToFile(filename)
+		err = os.Remove(filename)
+		if err != nil && !os.IsNotExist(err) {
+			t.Error(err)
+			return
+		}
 
-	ld := newDeckFromFile(filename)
+		return
+	}
 
-	if len(ld) != 52 {
-		t.Errorf("Excpected deck length of 52, but got %d", len(ld))
+	d := NewDeck()
+	err = d.toFile(filename)
+	if err != nil {
+		t.Error(err)
+
+		err = os.Remove(filename)
+		if err != nil && !os.IsNotExist(err) {
+			t.Error(err)
+			return
+		}
+
+		return
+	}
+
+	ld, err := NewDeckFromFile(filename)
+	if err != nil {
+		t.Error(err)
+
+		err = os.Remove(filename)
+		if err != nil && !os.IsNotExist(err) {
+			t.Error(err)
+			return
+		}
+
+		return
+	}
+
+	if len(ld.Cards) != 52 {
+		t.Errorf("Excpected deck length of 52, but got %d", len(ld.Cards))
 	}
 
 	if d.toString() != ld.toString() {
 		t.Errorf("Excpected original deck and deck from file to be same, but they aren't")
 	}
 
-	os.Remove(filename)
+	err = os.Remove(filename)
+	if err != nil && !os.IsNotExist(err) {
+		t.Error(err)
+		return
+	}
 }
 
 func TestDeckShuffle(t *testing.T) {
-	od := newDeck()
-	d := newDeck()
+	od := NewDeck()
+	d := NewDeck()
 
-	d.shuffle()
+	d.Shuffle()
 	ds := d.toString()
 
 	if ds == od.toString() {
 		t.Errorf("Excpected original deck and shuffled deck not to be same, but they are")
 	}
 
-	d.shuffle()
+	d.Shuffle()
 	if ds == d.toString() {
 		t.Errorf("Excpected shuffled deck and double shuffled deck not to be same, but they are")
 	}
 }
 
-func TestDeal(t *testing.T) {
-	d := newDeck()
+func TestDeckMoveCardsFromDeckToHand(t *testing.T) {
+	d := NewDeck()
+	d.Shuffle()
 
-	fd, sd := deal(d, 2)
+	fc := d.Cards[0].toString()
 
-	if len(fd) != 2 {
-		t.Errorf("Excpected first deck length of 2, but got %d", len(fd))
+	h := NewHand(1)
+	d.MoveCardsFromDeckToHand(h, 1)
+
+	if len(h.Cards) != 1 {
+		t.Errorf("Wrong hand size, expected 1 card, got - %d", len(h.Cards))
 	}
 
-	if len(sd) != 50 {
-		t.Errorf("Excpected first deck length of 50, but got %d", len(sd))
+	if len(d.Cards) != 51 {
+		t.Errorf("Wrong deck size, expected 51 card, got - %d", len(d.Cards))
+	}
+
+	if h.Cards[0].toString() != fc {
+		t.Errorf("Wrong card in hand, expected %s, got - %s", fc, h.Cards[0].toString())
 	}
 }

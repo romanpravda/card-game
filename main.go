@@ -4,41 +4,34 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
 func main() {
-	d := newDeck()
+	nd := NewDeck()
 
-	playBlackjack(d)
+	playBlackJack(nd)
 }
 
-func playBlackjack(d deck) {
-	ps := 0
-	ds := 0
+func playBlackJack(d *Deck) {
+	d.Shuffle()
 
-	d.shuffle()
+	ph := NewHand(2)
+	dh := NewHand(2)
 
-	ph, ld := deal(d, 2)
-	dh, ld := deal(ld, 1)
+	d.MoveCardsFromDeckToHand(ph, 2)
 
 	fmt.Println("Your hand:")
-	for _, card := range ph {
-		fmt.Println(card)
-	}
+	ph.Print()
 
-	pbj := (strings.Contains(ph[0], "Ace") && (strings.Contains(ph[1], "Ten") || strings.Contains(ph[1], "Jack") || strings.Contains(ph[1], "Queen") || strings.Contains(ph[1], "King"))) || ((strings.Contains(ph[0], "Ten") || strings.Contains(ph[0], "Jack") || strings.Contains(ph[0], "Queen") || strings.Contains(ph[0], "King")) && strings.Contains(ph[1], "Ace"))
-	pdbj := strings.Contains(dh[0], "Ace") || strings.Contains(dh[0], "Ten") || strings.Contains(dh[0], "Jack") || strings.Contains(dh[0], "Queen") || strings.Contains(dh[0], "King")
-
-	if pbj && !pdbj {
+	if ph.HasBlackjack() && !dh.HasBlackjackCards() {
 		fmt.Println("You won!")
 		return
 	}
 
-	ps = calcSum(ph)
+	fmt.Printf("Your sum: %d", ph.Sum())
 
-	if ps < 21 {
-		fmt.Printf("Your sum: %d. Would you take another card? (1 - Yes, 2 - No): ", ps)
+	if ph.Sum() < 21 {
+		fmt.Printf(". Would you take another card? (1 - Yes, 2 - No): ")
 		scanner := bufio.NewScanner(os.Stdin)
 
 		for scanner.Scan() {
@@ -46,117 +39,57 @@ func playBlackjack(d deck) {
 
 			if a == "2" {
 				break
+			} else if a != "1" {
+				fmt.Println("Wrong enter. Would you take another card? (1 - Yes, 2 - No): ")
+				continue
 			}
 
-			cth, nld := deal(ld, 1)
-			ld = nld
-
-			ph = append(ph, cth[0])
-			ps = calcSum(ph)
+			d.MoveCardsFromDeckToHand(ph, 1)
 
 			fmt.Println("Your hand:")
-			for _, card := range ph {
-				fmt.Println(card)
-			}
+			ph.Print()
 
-			if ps < 21 {
-				fmt.Printf("Your sum: %d. Would you take another card? (1 - Yes, 2 - No): ", ps)
+			if ph.Sum() < 21 {
+				fmt.Printf("Your sum: %d. Would you take another card? (1 - Yes, 2 - No): ", ph.Sum())
 			} else {
-				fmt.Printf("Your sum: %d\n", ps)
+				fmt.Printf("Your sum: %d\n", ph.Sum())
 				break
 			}
 		}
 	} else {
-		fmt.Printf("Your sum: %d\n", ps)
+		fmt.Println()
 	}
 
-	if ps > 21 {
+	if ph.Sum() > 21 {
 		fmt.Println("You lost!")
 		return
 	}
 
-	ctd, ld := deal(ld, 1)
-
-	if (strings.Contains(dh[0], "Ace") && (strings.Contains(ctd[0], "Ten") || strings.Contains(ctd[0], "Jack") || strings.Contains(ctd[0], "Queen") || strings.Contains(ctd[0], "King"))) || ((strings.Contains(dh[0], "Ten") || strings.Contains(dh[0], "Jack") || strings.Contains(dh[0], "Queen") || strings.Contains(dh[0], "King")) && strings.Contains(ctd[0], "Ace")) {
+	d.MoveCardsFromDeckToHand(dh, 1)
+	if dh.HasBlackjack() {
 		fmt.Println("You lost!")
 		return
 	}
 
-	dh = append(dh, ctd[0])
-	ds = calcSum(dh)
-
-	for ds < 17 {
-		ctd, ld = deal(ld, 1)
-		dh = append(dh, ctd[0])
-		ds = calcSum(dh)
+	for dh.Sum() < 17 {
+		d.MoveCardsFromDeckToHand(dh, 1)
 	}
 
 	fmt.Println("Dealer hand:")
-	for _, card := range dh {
-		fmt.Println(card)
-	}
+	dh.Print()
 
-	fmt.Printf("Dealer sum: %d\n", ds)
+	fmt.Printf("Dealer sum: %d\n", dh.Sum())
 
-	if ds > 21 {
+	if dh.Sum() > 21 {
 		fmt.Println("You won!")
 		return
 	}
 
-	if ps > ds {
+	if ph.Sum() > dh.Sum() {
 		fmt.Println("You won!")
-	} else if ps == ds {
+	} else if ph.Sum() == dh.Sum() {
 		fmt.Println("You even!")
 	} else {
 		fmt.Println("You lost!")
 	}
-}
-
-func calcSum(d deck) int {
-	s := 0
-	a := 0
-
-	for _, card := range d {
-		if strings.Contains(card, "Ace") {
-			a++
-		} else if strings.Contains(card, "Two") {
-			s += 2
-		} else if strings.Contains(card, "Three") {
-			s += 3
-		} else if strings.Contains(card, "Four") {
-			s += 4
-		} else if strings.Contains(card, "Five") {
-			s += 5
-		} else if strings.Contains(card, "Six") {
-			s += 6
-		} else if strings.Contains(card, "Seven") {
-			s += 7
-		} else if strings.Contains(card, "Eight") {
-			s += 8
-		} else if strings.Contains(card, "Nine") {
-			s += 9
-		} else {
-			s += 10
-		}
-	}
-
-	m := true
-	i := 0
-
-	for s < 21 && a > 0 && m {
-		if s+11 > 21 {
-			m = false
-		} else {
-			s += 11
-			a--
-			i++
-		}
-	}
-
-	if a > 0 {
-		s -= i * 11
-		s += a + i
-	}
-
-	return s
 }
