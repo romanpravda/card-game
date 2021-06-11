@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 const (
 	aceHighValue = 11
 	aceLowValue  = 1
@@ -30,10 +28,14 @@ func (h *Hand) AddCardToHand(c *Card) {
 	}
 }
 
-func (h Hand) Print() {
+func (h Hand) GetCardsNames() []string {
+	cs := make([]string, 0, len(h.Cards))
+
 	for _, c := range h.Cards {
-		fmt.Println(c.toString())
+		cs = append(cs, c.toString())
 	}
+
+	return cs
 }
 
 func (h Hand) HasBlackjack() bool {

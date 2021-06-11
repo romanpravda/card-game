@@ -7,9 +7,15 @@ import (
 )
 
 func main() {
-	nd := NewDeck()
+	d := NewDeck()
 
-	playBlackJack(nd)
+	playBlackJack(d)
+}
+
+func printHand(h *Hand) {
+	for _, c := range h.Cards {
+		println(c.toString())
+	}
 }
 
 func playBlackJack(d *Deck) {
@@ -19,9 +25,10 @@ func playBlackJack(d *Deck) {
 	dh := NewHand(2)
 
 	d.MoveCardsFromDeckToHand(ph, 2)
+	d.MoveCardsFromDeckToHand(dh, 1)
 
 	fmt.Println("Your hand:")
-	ph.Print()
+	printHand(ph)
 
 	if ph.HasBlackjack() && !dh.HasBlackjackCards() {
 		fmt.Println("You won!")
@@ -47,7 +54,7 @@ func playBlackJack(d *Deck) {
 			d.MoveCardsFromDeckToHand(ph, 1)
 
 			fmt.Println("Your hand:")
-			ph.Print()
+			printHand(ph)
 
 			if ph.Sum() < 21 {
 				fmt.Printf("Your sum: %d. Would you take another card? (1 - Yes, 2 - No): ", ph.Sum())
@@ -76,7 +83,7 @@ func playBlackJack(d *Deck) {
 	}
 
 	fmt.Println("Dealer hand:")
-	dh.Print()
+	printHand(dh)
 
 	fmt.Printf("Dealer sum: %d\n", dh.Sum())
 

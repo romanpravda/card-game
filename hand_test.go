@@ -220,3 +220,31 @@ func TestValueOfAceSevenAndEight(t *testing.T) {
 		t.Errorf("wrong sum\nexpected - %d\ngot - %d", exSum, h.Sum())
 	}
 }
+
+func TestPrintHand(t *testing.T) {
+	c1 := &Card{
+		Suit:      "Spades",
+		TextValue: "Ace",
+		Value:     1,
+	}
+	c2 := &Card{
+		Suit:      "Clubs",
+		TextValue: "Ace",
+		Value:     1,
+	}
+
+	h := NewHand(2)
+
+	h.AddCardToHand(c1)
+	h.AddCardToHand(c2)
+
+	cns := h.GetCardsNames()
+
+	if cns[0] != c1.toString() {
+		t.Errorf("Expected card %s, got %s.", c1.toString(), cns[0])
+	}
+
+	if cns[1] != c2.toString() {
+		t.Errorf("Expected card %s, got %s.", c2.toString(), cns[1])
+	}
+}
