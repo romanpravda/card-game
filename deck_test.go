@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -25,43 +27,24 @@ func TestNewDeck(t *testing.T) {
 
 func TestSaveToDeckAndNewDeckFromFile(t *testing.T) {
 	filename := "_decktesting"
-	err := os.Remove(filename)
-	if err != nil && !os.IsNotExist(err) {
-		t.Error(err)
-
-		err = os.Remove(filename)
-		if err != nil && !os.IsNotExist(err) {
-			t.Error(err)
-			return
-		}
-
-		return
-	}
 
 	d := NewDeck()
-	err = d.toFile(filename)
-	if err != nil {
-		t.Error(err)
-
-		err = os.Remove(filename)
+	err := d.toFile(filename)
+	defer func() {
+		err := os.Remove(filename)
 		if err != nil && !os.IsNotExist(err) {
 			t.Error(err)
-			return
 		}
+	}()
 
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
 	ld, err := NewDeckFromFile(filename)
 	if err != nil {
 		t.Error(err)
-
-		err = os.Remove(filename)
-		if err != nil && !os.IsNotExist(err) {
-			t.Error(err)
-			return
-		}
-
 		return
 	}
 
@@ -77,6 +60,37 @@ func TestSaveToDeckAndNewDeckFromFile(t *testing.T) {
 	if err != nil && !os.IsNotExist(err) {
 		t.Error(err)
 		return
+	}
+}
+
+func TestNewDeckFromFileNoFileError(t *testing.T) {
+	filename := "_decktesting"
+
+	_, err := NewDeckFromFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		t.Error(err)
+	}
+}
+
+func TestNewDeckFromFileWrongCardFormat(t *testing.T) {
+	filename := "_decktesting"
+
+	err := os.WriteFile(filename, []byte("1\n2"), 0666)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer func() {
+		err := os.Remove(filename)
+		if err != nil && !os.IsNotExist(err) {
+			t.Error(err)
+		}
+	}()
+
+
+	_, err = NewDeckFromFile(filename)
+	if err != nil && !reflect.DeepEqual(err, errors.New(`Wrong string with card format. It should be "<suit> of <value>", got string 1.`)) {
+		t.Error(err)
 	}
 }
 
